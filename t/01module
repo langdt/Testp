@@ -1,0 +1,11 @@
+use strict;
+use warnings;
+use Test::More;
+use FindBin;
+use lib "$FindBin::Bin/..";
+BEGIN{
+	use_ok('LoanRec');
+}
+can_ok('LoanRec', qw(reconcile));
+
+done_testing(2);

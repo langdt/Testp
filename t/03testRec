@@ -1,0 +1,44 @@
+use strict;
+use warnings;
+use Test::More;
+use FindBin;
+use lib "$FindBin::Bin/..";
+use LoanRec;
+
+use Data::Dumper;
+
+plan tests=>6;
+
+my @trades1 = (
+	{client => 'A', clientRef => '1', security => 'A', quantity => 100},
+	{client => 'A', clientRef => '2', security => 'B', quantity => 200,
+		return => {client => 'A', clientRef => '2:1', security => 'B', quantity => 210, parent => '2'}},
+	{client => 'A', clientRef => '3', security => 'C', quantity => 300,
+		return => {client => 'A', clientRef => '3:1', security => 'C', quantity => 310, parent => '3'}},
+	{client => 'A', clientRef => '4', security => 'D', quantity => 400,
+		return => {client => 'A', clientRef => '4:1', security => 'D', quantity => 410, parent => '4'}},
+	{client => 'A', clientRef => '5', security => 'E', quantity => 500},
+);
+
+my @trades2 = (
+	{client => 'B', clientRef => 'B1', security => 'A', quantity => 100},
+	{client => 'B', clientRef => 'B2', security => 'B', quantity => 200,
+		return => {client => 'B', clientRef => 'B2:1', security => 'B', quantity => 210, parent => 'B2'}},
+	{client => 'B', clientRef => 'B3', security => 'C', quantity => 300},
+	{client => 'B', clientRef => 'B4', security => 'D', quantity => 400,
+		return => {client => 'B', clientRef => 'B4:1', security => 'D', quantity => 4390, parent => 'B4'}},
+	{client => 'B', clientRef => 'B5', security => 'F', quantity => 500},
+);
+
+my ($missing, $quantityBreaks, $missingReturns) = LoanRec::reconcile(\@trades1, \@trades2);
+
+is (@$missing, 2, 'Correct number of missing trades in rec');
+is (@$quantityBreaks, 1, 'Correct number of quantity breaks in rec');
+is (@$missingReturns, 1, 'Correct number of missing returns in rec');
+
+# reversing the rec should give the same result
+($missing, $quantityBreaks, $missingReturns) = LoanRec::reconcile(\@trades2, \@trades1);
+
+is (@$missing, 2, 'Correct number of missing trades in rec');
+is (@$quantityBreaks, 1, 'Correct number of quantity breaks in rec');
+is (@$missingReturns, 1, 'Correct number of missing returns in rec');

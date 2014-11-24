@@ -1,0 +1,75 @@
+use strict;
+use warnings;
+use Test::More;
+use FindBin;
+use lib "$FindBin::Bin/..";
+use LoanRec;
+
+plan tests => 2;
+
+subtest 'Load first file' => sub {
+	plan tests =>  1 + 3 * 6 + 1;
+	my $data = getTest1Data();
+	open my $fh, "<", \$data;
+	my @trades = LoanRec::parseTrades($fh);
+	close $fh;
+
+	# Three trades, two with returns
+	is(@trades, 3, 'Correct trade count');
+	my $returnCount;
+	foreach my $trade (@trades) {
+		foreach my $field (qw(client tradeReturn clientRef security quantity)) {
+			ok(exists $trade->{$field}, "Expected field '$field' exists");
+		}
+		ok(! exists $trade->{parent}, 'Trade should not have parent field');
+		$returnCount++ if exists $trade->{return};
+	}
+	is($returnCount, 2, "Correct number of returns");
+};
+
+subtest 'Load second file' => sub {
+	plan tests =>  1 + 3 * 6 + 1;
+	my $data = getTest2Data();
+	open my $fh, "<", \$data;
+	my @trades = LoanRec::parseTrades($fh);
+	close $fh;
+
+	# Three trades, two with returns
+	is(@trades, 3, 'Correct trade count');
+	my $returnCount;
+	foreach my $trade (@trades) {
+		foreach my $field (qw(client tradeReturn clientRef security quantity)) {
+			ok(exists $trade->{$field}, "Expected field '$field' exists");
+		}
+		ok(! exists $trade->{parent}, 'Trade should not have parent field');
+		$returnCount++ if exists $trade->{return};
+	}
+	is($returnCount, 1, "Correct number of returns");
+};
+
+sub getTest1Data{
+	my $data =<<'END_DATA_1';
+		Client	TradeOrReturn	Reference	Security	Quantity	Parent
+		C1	T	ABC12345	US012345678	1000
+		C1	T	ABC23456	GB123456583	65670
+		C1	R	ABC23456:1	GB123456583	6000	ABC23456
+		C1	T	ABC98765	HK345675432	5000
+		C1	R	ABC98765:1	HK345675432	2000	ABC98765
+END_DATA_1
+	$data =~ s{^\s+}{}gm;
+	return $data;
+}
+
+sub getTest2Data{
+	my $data =<<'END_DATA_2';
+		Client	TradeOrReturn	Reference	Security	Quantity	Parent
+		C2	T	XDGSYAG	US012345678	1000
+		C2	T	ASWEYFH	GB123456583	65670
+		C2	T	QWERYASH	HK345675432	5000
+		C2	R	QWERYASH:1	HK345675432	1500	QWERYASH
+		C1	R	ABC98765:1	HK345675432	2000	ABC98765
+END_DATA_2
+	$data =~ s{^\s+}{}gm;
+	return $data;
+}
+
