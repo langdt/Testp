@@ -8,10 +8,11 @@ use Data::Dumper;
 __PACKAGE__->run(@ARGV) unless caller();
 
 sub run{
-	croak "Must provide two file names" unless @ARGV == 2;
-	open my $fh1, "<", $ARGV[0] or die "Failed to open file: $!";
+	my ($self, @files) = @_;
+	croak "Must provide two file names" unless @files == 2;
+	open my $fh1, "<", $files[0] or die "Failed to open file $files[0]: $!";
 	my @trades1 = parseTrades($fh1);
-	open my $fh2, "<", $ARGV[1] or die "Failed to open file: $!";
+	open my $fh2, "<", $files[1] or die "Failed to open file $files[1]: $!";
 	my @trades2 = parseTrades($fh2);
 
 	my ($missingTrades, $quantityBreaks, $missingReturns) = reconcile(\@trades1, \@trades2);
